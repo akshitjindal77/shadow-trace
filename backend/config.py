@@ -26,6 +26,8 @@ class Settings:
         # API Keys
         self.HIBP_API_KEY: str = os.getenv("HIBP_API_KEY", "")
         self.ABUSEIPDB_API_KEY: str = os.getenv("ABUSEIPDB_API_KEY", "")
+        self.BRAVE_API_KEY: str = os.getenv("BRAVE_API_KEY", "")
+        self.BRAVE_SEARCH_URL: str = os.getenv("BRAVE_SEARCH_URL", "https://api.search.brave.com/res/v1/web")
         
         # Rate Limiting
         self.RATE_LIMIT_REQUESTS: int = int(os.getenv("RATE_LIMIT_REQUESTS", "100"))
