@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShadowTrace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-page="index">
+  <header class="app-header">
+    <div class="brand">
+      <div class="logo-mark">S</div>
+      <div>
+        <h1>ShadowTrace</h1>
+        <p>Discover your digital exposure before attackers do</p>
+      </div>
+    </div>
+    <nav>
+      <a class="nav-link" href="history.html">History</a>
+    </nav>
+  </header>
+
+  <main class="page-shell">
+    <section class="hero-card">
+      <div class="hero-copy">
+        <span class="eyebrow">Digital exposure scanner</span>
+        <h2>Scan email, username, or domain in minutes.</h2>
+        <p>Run ShadowTrace against your digital identity and get risk insights, breach visibility, and exposure recommendations.</p>
+      </div>
+
+      <div class="scan-panel card">
+        <label class="field-label" for="scan-input">Enter email, username, or domain</label>
+        <input id="scan-input" class="text-input" placeholder="Enter email, username, or domain" autocomplete="off" />
+
+        <div class="toggle-row" role="group" aria-label="Select input type">
+          <button type="button" class="toggle-btn active" data-type="email">Email</button>
+          <button type="button" class="toggle-btn" data-type="username">Username</button>
+          <button type="button" class="toggle-btn" data-type="domain">Domain</button>
+        </div>
+
+        <label class="checkbox-label">
+          <input id="consent-checkbox" type="checkbox" />
+          <span>I confirm this belongs to me or I have permission to scan it</span>
+        </label>
+
+        <button id="scan-button" class="primary-btn" type="button">Start Scan</button>
+
+        <div id="status-area" class="status-card hidden">
+          <div class="status-header">
+            <strong>Scan progress</strong>
+            <span id="status-text">Initializing...</span>
+          </div>
+          <ul id="status-list" class="status-list"></ul>
+        </div>
+
+        <div id="error-box" class="error-box hidden"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

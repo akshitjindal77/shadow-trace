@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShadowTrace History</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-page="history">
+  <header class="app-header">
+    <div class="brand">
+      <div class="logo-mark">S</div>
+      <div>
+        <h1>ShadowTrace</h1>
+        <p>Past scans and exposure tracking</p>
+      </div>
+    </div>
+    <nav>
+      <a class="nav-link" href="index.html">New Scan</a>
+    </nav>
+  </header>
+
+  <main class="history-shell">
+    <div class="history-header card">
+      <div>
+        <h2>Scan history</h2>
+        <p>Review previous scans, export reports, or delete items securely.</p>
+      </div>
+      <div class="history-controls">
+        <select id="filter-type" class="select-input">
+          <option value="all">All types</option>
+          <option value="email">Email</option>
+          <option value="username">Username</option>
+          <option value="domain">Domain</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card table-card">
+      <div class="table-scroll">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Input Value</th>
+              <th>Type</th>
+              <th>Risk</th>
+              <th>Level</th>
+              <th>Timestamp</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="history-table-body"></tbody>
+        </table>
+      </div>
+
+      <div class="pagination-bar">
+        <button id="prev-page" class="secondary-btn">Previous</button>
+        <span id="page-indicator">Page 1</span>
+        <button id="next-page" class="secondary-btn">Next</button>
+      </div>
+    </div>
+  </main>
+
+  <div id="history-error" class="error-box hidden"></div>
+  <script src="app.js" defer></script>
+</body>
+</html>

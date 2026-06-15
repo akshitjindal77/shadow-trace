@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ShadowTrace Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; color: #1b1b1b; margin: 28px; line-height: 1.5; }
+    h1, h2, h3 { margin: 0 0 12px; }
+    h1 { font-size: 28px; }
+    h2 { font-size: 18px; border-bottom: 1px solid #ddd; padding-bottom: 6px; margin-top: 24px; }
+    .summary-table, .detail-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .summary-table td, .detail-table th, .detail-table td { padding: 8px 10px; border: 1px solid #ddd; }
+    .summary-table td:first-child { width: 220px; font-weight: 700; background: #f4f4f4; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; color: #fff; font-size: 12px; }
+    .badge-low { background: #3fb950; }
+    .badge-moderate { background: #e3b341; }
+    .badge-high { background: #d29922; }
+    .badge-critical { background: #f85149; }
+    .section-block { margin-top: 16px; }
+    .empty-state { color: #666; font-size: 13px; }
+    ul { margin: 8px 0 0 20px; padding: 0; }
+    li { margin-bottom: 8px; }
+    .muted { color: #666; }
+    .small-text { font-size: 12px; color: #555; }
+  </style>
+</head>
+<body>
+  <h1>ShadowTrace Report</h1>
+
+  <div class="section-block">
+    <h2>Scan summary</h2>
+    <table class="summary-table">
+      <tr><td>Scan ID</td><td>{{ scan_id }}</td></tr>
+      <tr><td>Input value</td><td>{{ input_value }}</td></tr>
+      <tr><td>Input type</td><td>{{ input_type }}</td></tr>
+      <tr><td>Scan timestamp</td><td>{{ scan_timestamp }}</td></tr>
+      <tr><td>Duration</td><td>{{ '%.1f' | format(scan_duration_seconds) }} seconds</td></tr>
+      <tr><td>Overall risk score</td><td>{{ overall_risk_score }} / 100</td></tr>
+      <tr><td>Risk level</td><td><span class="badge badge-{{ risk_level|lower }}">{{ risk_level }}</span></td></tr>
+      <tr><td>Breaches</td><td>{{ breach_count }}</td></tr>
+      <tr><td>Platforms found</td><td>{{ platforms_found }}</td></tr>
+      <tr><td>Dork results</td><td>{{ dork_results_count }}</td></tr>
+    </table>
+  </div>
+
+  <div class="section-block">
+    <h2>Recommendations</h2>
+    {% if recommendations %}
+      <ul>
+        {% for rec in recommendations %}
+          <li>
+            <strong>{{ rec.action or rec.title or 'Action' }}</strong>
+            {% if rec.category %}<span class="muted">({{ rec.category }})</span>{% endif %}
+            <div class="small-text">{{ rec.reason or rec.description or 'Review this recommendation.' }}</div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty-state">No recommendations available.</p>
+    {% endif %}
+  </div>
+
+  <div class="section-block">
+    <h2>Platform exposures</h2>
+    {% if platforms %}
+      <table class="detail-table">
+        <thead>
+          <tr><th>Platform</th><th>URL</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {% for platform in platforms %}
+            <tr>
+              <td>{{ platform.platform or platform.name or 'Unknown' }}</td>
+              <td>{{ platform.profile_url or platform.url or 'Unavailable' }}</td>
+              <td>{{ 'Found' if platform.found else 'Not found' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-state">No platform exposures were detected.</p>
+    {% endif %}
+  </div>
+
+  <div class="section-block">
+    <h2>Breaches</h2>
+    {% if breaches %}
+      <table class="detail-table">
+        <thead>
+          <tr><th>Name</th><th>Date</th><th>Data Exposed</th></tr>
+        </thead>
+        <tbody>
+          {% for breach in breaches %}
+            <tr>
+              <td>{{ breach.name or breach.Title or 'Unknown breach' }}</td>
+              <td>{{ breach.breach_date or breach.Date or 'Unknown date' }}</td>
+              <td>{{ breach.data_classes | default([]) | join(', ') }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-state">No breach exposures were found.</p>
+    {% endif %}
+  </div>
+
+  <div class="section-block">
+    <h2>Dork findings</h2>
+    {% if dorks %}
+      <table class="detail-table">
+        <thead>
+          <tr><th>Query</th><th>Results</th><th>Severity</th></tr>
+        </thead>
+        <tbody>
+          {% for dork in dorks %}
+            <tr>
+              <td>{{ dork.query_string or dork.title or 'Unknown query' }}</td>
+              <td>{{ dork.result_count or 'N/A' }}</td>
+              <td>{{ dork.risk_level or 'LOW' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-state">No dork findings were detected.</p>
+    {% endif %}
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShadowTrace Results</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body data-page="dashboard">
+  <header class="app-header">
+    <div class="brand">
+      <div class="logo-mark">S</div>
+      <div>
+        <h1>ShadowTrace</h1>
+        <p>Deep attack surface insights for the scanned target</p>
+      </div>
+    </div>
+    <nav>
+      <a class="nav-link" href="history.html">History</a>
+      <a class="nav-link" href="index.html">New Scan</a>
+    </nav>
+  </header>
+
+  <main class="dashboard-shell">
+    <section class="dashboard-col left-col">
+      <div class="card">
+        <h2>Scan summary</h2>
+        <div class="summary-row">
+          <span class="summary-label">Input</span>
+          <strong id="summary-input">-</strong>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Type</span>
+          <span id="summary-type" class="badge badge-type">-</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Timestamp</span>
+          <span id="summary-timestamp">-</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Duration</span>
+          <span id="summary-duration">-</span>
+        </div>
+
+        <div class="quick-stats">
+          <div class="stat-card">
+            <span class="stat-title">Breaches</span>
+            <strong id="stat-breaches">0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-title">Platforms</span>
+            <strong id="stat-platforms">0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-title">Dork results</span>
+            <strong id="stat-dorks">0</strong>
+          </div>
+        </div>
+
+        <div class="action-group">
+          <button id="export-button" class="secondary-btn">Export PDF</button>
+          <button id="scan-again-btn" class="secondary-btn">Scan Again</button>
+        </div>
+        <button id="delete-button" class="danger-btn full-width">Delete This Scan</button>
+      </div>
+    </section>
+
+    <section class="dashboard-col center-col">
+      <div class="card risk-card">
+        <div class="gauge-container">
+          <div class="gauge-area">
+            <canvas id="risk-gauge" width="280" height="280"></canvas>
+            <div class="gauge-value">
+              <span id="risk-score">0</span>
+              <small>/100</small>
+            </div>
+          </div>
+        </div>
+        <div class="risk-badge-container">
+          <div class="risk-badge" id="risk-badge">LOW</div>
+        </div>
+      </div>
+
+      <div class="card recommendations-card">
+        <h2>Recommendations</h2>
+        <div id="recommendations-list" class="recommendations-list"></div>
+      </div>
+    </section>
+
+    <section class="dashboard-col right-col">
+      <div class="card findings-card">
+        <h2>Findings</h2>
+        <div class="findings-row">
+          <span>Breaches</span>
+          <span id="finding-breaches-count" class="badge">0</span>
+        </div>
+        <div class="findings-row">
+          <span>Platforms</span>
+          <span id="finding-platforms-count" class="badge">0</span>
+        </div>
+        <div class="findings-row">
+          <span>Dork scans</span>
+          <span id="finding-dorks-count" class="badge">0</span>
+        </div>
+
+        <div class="details-panel">
+          <h3>Platform exposure</h3>
+          <div id="email-disclaimer" class="email-disclaimer hidden">
+            <small>ℹ️ Username derived from email prefix. Results may include false positives.</small>
+          </div>
+          <div id="platform-list" class="link-list"></div>
+        </div>
+
+        <div class="details-panel">
+          <h3>Breach list</h3>
+          <div id="breach-list" class="item-list"></div>
+        </div>
+
+        <div class="details-panel">
+          <h3>Dork findings</h3>
+          <div id="dork-list" class="item-list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="dashboard-error" class="error-box hidden"></div>
+  <script src="app.js" defer></script>
+</body>
+</html>
