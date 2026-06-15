@@ -1,16 +1,94 @@
 """
 ShadowTrace Report Generator
 
-Generates basic PDF reports from scan results.
+Generates PDF reports from scan results using HTML templates and WeasyPrint.
 """
 import json
+import os
+import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict
 from fastapi.responses import FileResponse
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+try:
+    stderr_fd = os.dup(2)
+    with tempfile.TemporaryFile() as tmp:
+        os.dup2(tmp.fileno(), 2)
+        try:
+            from weasyprint import HTML
+            HAS_WEASYPRINT = True
+        except Exception:
+            HTML = None  # type: ignore
+            HAS_WEASYPRINT = False
+        finally:
+            os.dup2(stderr_fd, 2)
+            os.close(stderr_fd)
+except Exception:
+    HTML = None  # type: ignore
+    HAS_WEASYPRINT = False
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 REPORTS_DIR = BASE_DIR / "reports"
+TEMPLATES_DIR = BASE_DIR / "templates"
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+TEMPLATES_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _load_json(value: str, fallback: Any) -> Any:
+    try:
+        return json.loads(value)
+    except Exception:
+        return fallback
+
+
+def _normalize_platforms(findings: Dict[str, Any]) -> list:
+    platforms = _load_json(findings.get("findings_json", "{}")) if isinstance(findings, dict) else {}
+    username_enum = platforms.get("username_enum", {}).get("data", {}) if isinstance(platforms, dict) else {}
+    return [item for item in username_enum.get("platforms", []) if item.get("found")]
+
+
+def _normalize_breaches(findings: Dict[str, Any]) -> list:
+    platforms = _load_json(findings.get("findings_json", "{}")) if isinstance(findings, dict) else {}
+    breaches_data = platforms.get("breaches", {}).get("data", {}) if isinstance(platforms, dict) else {}
+    return breaches_data.get("breaches", []) or breaches_data.get("items", []) or []
+
+
+def _normalize_dorks(findings: Dict[str, Any]) -> list:
+    platforms = _load_json(findings.get("findings_json", "{}")) if isinstance(findings, dict) else {}
+    dorks_data = platforms.get("dorks", {}).get("data", {}) if isinstance(platforms, dict) else {}
+    return dorks_data.get("queries", []) or []
+
+
+def pdf_path_for_scan(scan_id: str) -> Path:
+    return REPORTS_DIR / f"shadowtrace_{scan_id}.pdf"
+
+
+def _template_context(scan_result: Any) -> Dict[str, Any]:
+    findings = _load_json(scan_result.findings_json) if hasattr(scan_result, "findings_json") else {}
+    recommendations = _load_json(scan_result.recommendations_json) if hasattr(scan_result, "recommendations_json") else []
+
+    username_enum = findings.get("username_enum", {}).get("data", {}) if isinstance(findings, dict) else {}
+    breach_data = findings.get("breaches", {}).get("data", {}) if isinstance(findings, dict) else {}
+    dork_data = findings.get("dorks", {}).get("data", {}) if isinstance(findings, dict) else {}
+
+    return {
+        "scan_id": scan_result.scan_id,
+        "input_value": scan_result.input_value,
+        "input_type": scan_result.input_type,
+        "scan_timestamp": scan_result.scan_timestamp,
+        "overall_risk_score": scan_result.overall_risk_score,
+        "risk_level": scan_result.risk_level,
+        "breach_count": scan_result.breach_count,
+        "platforms_found": scan_result.platforms_found,
+        "dork_results_count": scan_result.dork_results_count,
+        "scan_duration_seconds": scan_result.scan_duration_seconds,
+        "recommendations": recommendations,
+        "platforms": username_enum.get("platforms", []),
+        "breaches": breach_data.get("breaches", []) or breach_data.get("items", []),
+        "dorks": dork_data.get("queries", []),
+        "raw_findings": findings,
+    }
 
 
 def _escape_pdf_string(text: str) -> str:
@@ -74,7 +152,7 @@ def _build_report_content(scan_result: Any) -> str:
     ]
 
     try:
-        recommendations = json.loads(scan_result.recommendations_json)
+        recommendations = _load_json(scan_result.recommendations_json)
     except Exception:
         recommendations = []
 
@@ -85,22 +163,26 @@ def _build_report_content(scan_result: Any) -> str:
 
     report.append("\nFindings:")
     try:
-        findings = json.loads(scan_result.findings_json)
+        findings = _load_json(scan_result.findings_json)
     except Exception:
         findings = {}
     report.append(json.dumps(findings, indent=2)[:4000])
     return "\n".join(report)
 
 
-def pdf_path_for_scan(scan_id: str) -> Path:
-    return REPORTS_DIR / f"shadowtrace_{scan_id}.pdf"
-
-
 def generate_pdf_report(scan_result: Any) -> FileResponse:
     pdf_path = pdf_path_for_scan(scan_result.scan_id)
-    if not pdf_path.exists():
-        content = _build_report_content(scan_result)
-        pdf_bytes = _simple_pdf_bytes(content)
+    if HAS_WEASYPRINT:
+        env = Environment(
+            loader=FileSystemLoader(str(TEMPLATES_DIR)),
+            autoescape=select_autoescape(["html", "xml"]),
+        )
+        template = env.get_template("report_template.html")
+        html_content = template.render(_template_context(scan_result))
+        HTML(string=html_content).write_pdf(str(pdf_path))
+    else:
+        text_content = _build_report_content(scan_result)
+        pdf_bytes = _simple_pdf_bytes(text_content)
         with open(pdf_path, "wb") as file:
             file.write(pdf_bytes)
     return FileResponse(str(pdf_path), media_type="application/pdf", filename=pdf_path.name)

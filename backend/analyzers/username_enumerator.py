@@ -8,6 +8,22 @@ import asyncio
 import httpx
 from typing import List, Dict, Optional, Any
 
+# Phrases that reliably indicate a profile does not exist across any platform
+UNIVERSAL_NOT_FOUND_INDICATORS = [
+    "page not found",
+    "user not found",
+    "account not found",
+    "profile not found",
+    "this page doesn't exist",
+    "this page does not exist",
+    "this account doesn't exist",
+    "this account does not exist",
+    "sorry, this page isn't available",
+    "the page you were looking for doesn't exist",
+    "the page you're looking for doesn't exist",
+    "we couldn't find that page",
+]
+
 # Realistic user agents
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -19,199 +35,159 @@ USER_AGENTS = [
 PLATFORMS = {
     "github": {
         "url": "https://github.com/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["404", "this is not the web page you are looking for"]
     },
     "reddit": {
         "url": "https://www.reddit.com/user/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "this subreddit does not exist"]
     },
-    "twitter": {
-        "url": "https://twitter.com/{username}",
-        "status_code": 200,
-        "method": "status"
+    "x": {
+        "url": "https://x.com/{username}",
+        "not_found_indicators": ["user not found", "page does not exist", "this account does not exist"]
     },
     "instagram": {
         "url": "https://www.instagram.com/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["user not found", "this page could not be found", "page not found"]
     },
     "linkedin": {
         "url": "https://www.linkedin.com/in/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "this profile is not available"]
     },
     "tiktok": {
         "url": "https://www.tiktok.com/@{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["user not found", "page does not exist", "this user does not exist"]
     },
     "twitch": {
         "url": "https://twitch.tv/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["user not found", "channel not found", "this channel does not exist", "404"]
     },
     "steam": {
-        "url": "https://steamcommunity.com/profiles/{username}",
-        "status_code": 200,
-        "method": "content",
-        "check": "steamid"
+        "url": "https://steamcommunity.com/id/{username}",
+        "not_found_indicators": ["profile not found", "the specified profile could not be found", "err_invalid_character"]
     },
     "pinterest": {
         "url": "https://www.pinterest.com/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "user not found"]
     },
     "tumblr": {
         "url": "https://{username}.tumblr.com",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["does not exist", "page not found", "404"]
     },
     "medium": {
         "url": "https://medium.com/@{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "user does not exist"]
     },
     "dev.to": {
         "url": "https://dev.to/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "user not found"]
     },
     "hackerrank": {
         "url": "https://www.hackerrank.com/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["user not found", "404", "page does not exist"]
     },
     "leetcode": {
         "url": "https://leetcode.com/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "user does not exist"]
     },
     "kaggle": {
         "url": "https://www.kaggle.com/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "user not found", "404"]
     },
     "gitlab": {
         "url": "https://gitlab.com/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "user does not exist"]
     },
     "bitbucket": {
         "url": "https://bitbucket.org/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "this account does not exist"]
     },
     "npm": {
         "url": "https://www.npmjs.com/~{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "not found"]
     },
     "pypi": {
         "url": "https://pypi.org/user/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "not found"]
     },
     "docker_hub": {
         "url": "https://hub.docker.com/u/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "user not found", "404"]
     },
     "youtube": {
         "url": "https://www.youtube.com/@{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "channel does not exist"]
     },
     "flickr": {
         "url": "https://www.flickr.com/photos/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "this photostream does not exist"]
     },
     "vimeo": {
         "url": "https://vimeo.com/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "user does not exist"]
     },
     "soundcloud": {
         "url": "https://soundcloud.com/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "user not found"]
     },
     "spotify": {
         "url": "https://open.spotify.com/user/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "user does not exist"]
     },
     "lastfm": {
         "url": "https://www.last.fm/user/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "user does not exist"]
     },
     "goodreads": {
         "url": "https://www.goodreads.com/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "user does not exist"]
     },
     "producthunt": {
         "url": "https://www.producthunt.com/@{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "user not found"]
     },
     "angellist": {
         "url": "https://angel.co/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "user does not exist"]
     },
     "keybase": {
         "url": "https://keybase.io/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "not found"]
     },
     "gravatar": {
         "url": "https://gravatar.com/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "not found"]
     },
     "about_me": {
         "url": "https://about.me/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "user not found"]
     },
     "pastebin": {
         "url": "https://pastebin.com/u/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "user does not exist"]
     },
     "replit": {
         "url": "https://replit.com/@{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "user does not exist"]
     },
     "codepen": {
         "url": "https://codepen.io/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "user does not exist"]
     },
     "dribbble": {
         "url": "https://dribbble.com/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "user not found"]
     },
     "behance": {
         "url": "https://www.behance.net/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "user does not exist"]
     },
     "fiverr": {
         "url": "https://www.fiverr.com/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "seller not found"]
     },
     "upwork": {
         "url": "https://www.upwork.com/o/{username}",
-        "status_code": 200,
-        "method": "status"
+        "not_found_indicators": ["page not found", "404", "freelancer not found"]
     }
 }
 
@@ -224,6 +200,7 @@ async def check_platform(
 ) -> Dict[str, Any]:
     """
     Check if a username exists on a single platform.
+    Uses content-based detection with "not found" indicators.
     
     Args:
         client: httpx AsyncClient instance
@@ -246,13 +223,20 @@ async def check_platform(
             }
         )
         
-        # Check if username exists based on status code
-        found = response.status_code == platform_info.get("status_code", 200)
-        
-        # Additional content-based checks for specific platforms
-        if found and platform_info.get("method") == "content":
-            check_string = platform_info.get("check", "")
-            found = check_string.lower() in response.text.lower()
+        # Content-based detection: combine platform-specific and universal not-found phrases
+        response_text = response.text.lower()
+        platform_indicators = platform_info.get("not_found_indicators", [])
+        all_indicators = list(platform_indicators) + UNIVERSAL_NOT_FOUND_INDICATORS
+
+        found = True
+        for indicator in all_indicators:
+            if indicator.lower() in response_text:
+                found = False
+                break
+
+        # Also check for specific HTTP status codes that indicate not found
+        if response.status_code in [404, 410]:
+            found = False
         
         return {
             "platform": platform_name,
@@ -321,6 +305,10 @@ async def enumerate_username(username: str) -> Dict[str, Any]:
     
     # Sanitize username
     username = username.strip().replace(" ", "").lower()
+    
+    # Extract email prefix if input is an email address
+    if "@" in username:
+        username = username.split("@")[0]
     
     try:
         async with httpx.AsyncClient(follow_redirects=True) as client:
